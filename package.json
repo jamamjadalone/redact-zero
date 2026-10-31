@@ -1,0 +1,51 @@
+{
+  "name": "redact-zero",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Zero-knowledge, 100% client-side ID & KYC document redactor with anti-fraud watermarking. No uploads, no telemetry, works offline.",
+  "license": "MIT",
+  "author": "jamamjadalone",
+  "homepage": "https://jamamjadalone.github.io/redact-zero/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jamamjadalone/redact-zero.git"
+  },
+  "keywords": [
+    "redaction",
+    "privacy",
+    "kyc",
+    "pwa",
+    "offline",
+    "pdf",
+    "canvas",
+    "zero-knowledge"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "overrides": {
+    "@babel/helper-create-class-features-plugin": "7.29.7",
+    "@babel/traverse": "7.29.8",
+    "browserslist": "4.28.8"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "icons": "node scripts/generate-icons.mjs"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}

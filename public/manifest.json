@@ -1,0 +1,51 @@
+{
+  "name": "RedactZero — Zero-Knowledge Document Redactor",
+  "short_name": "RedactZero",
+  "description": "Redact IDs, passports and KYC documents entirely in your browser. Nothing is uploaded, nothing is tracked, and it works offline.",
+  "id": "/redact-zero/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#060a12",
+  "theme_color": "#0f172a",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "utilities", "security", "privacy"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open a document",
+      "short_name": "Open",
+      "url": "./?action=open",
+      "description": "Pick a PDF or image to redact locally"
+    },
+    {
+      "name": "Verify isolation",
+      "short_name": "Verify",
+      "url": "./?action=verify",
+      "description": "Open the zero-network verification guide"
+    }
+  ],
+  "prefer_related_applications": false
+}

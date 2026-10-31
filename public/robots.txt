@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+# RedactZero has no server. There is nothing to crawl but the static shell.
