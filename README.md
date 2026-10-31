@@ -4,9 +4,12 @@
 
 # RedactZero
 
-**Zero-knowledge ID & KYC document redaction — 100% in your browser.**
+**Redact IDs, passports and KYC documents without uploading them anywhere.**
 
-Redact. Watermark. Flatten. Nothing ever leaves your device.
+Blackout · pixelate · watermark · flatten — entirely in your browser tab.
+
+[![Open RedactZero](https://img.shields.io/badge/Open_RedactZero-now-34d399?style=for-the-badge&logo=googlechrome&logoColor=white)](https://jamamjadalone.is-a.dev/redact-zero/)
+[![Verify isolation](https://img.shields.io/badge/Verify_isolation-0_requests-38bdf8?style=for-the-badge)](https://jamamjadalone.is-a.dev/redact-zero/?action=verify)
 
 [![MIT License](https://img.shields.io/badge/license-MIT-34d399?style=flat-square)](LICENSE)
 [![Quality gates](https://github.com/jamamjadalone/redact-zero/actions/workflows/quality.yml/badge.svg)](https://github.com/jamamjadalone/redact-zero/actions/workflows/quality.yml)
@@ -14,10 +17,11 @@ Redact. Watermark. Flatten. Nothing ever leaves your device.
 [![100% Client-Side](https://img.shields.io/badge/client--side-100%25-34d399?style=flat-square)](#security-model)
 [![Works Offline](https://img.shields.io/badge/offline-ready-38bdf8?style=flat-square)](#progressive-web-app)
 [![PWA](https://img.shields.io/badge/PWA-installable-38bdf8?style=flat-square)](#progressive-web-app)
-[![Vite](https://img.shields.io/badge/Vite-6-646cff?style=flat-square&logo=vite&logoColor=white)](https://vite.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
-[**Live app**](https://jamamjadalone.github.io/redact-zero/) · [Report a bug](https://github.com/jamamjadalone/redact-zero/issues) · [Verify isolation](https://jamamjadalone.github.io/redact-zero/?action=verify)
+[**Live app**](https://jamamjadalone.is-a.dev/redact-zero/) ·
+[GitHub Pages mirror](https://jamamjadalone.github.io/redact-zero/) ·
+[Report a bug](https://github.com/jamamjadalone/redact-zero/issues) ·
+[How it works](#how-it-works)
 
 </div>
 
@@ -49,6 +53,9 @@ account, no analytics, no remote fonts and no network requests. The app ships wi
 Content-Security-Policy that blocks outbound connections and a runtime tripwire that counts
 any attempt to make one.
 
+> "Zero-knowledge" here is plain English, not a cryptographic proof: there is no server, so
+> there is nothing that *could* know about your document.
+
 - **No uploads.** Files are read from disk into memory with the File API.
 - **No accounts.** There is nothing to sign up for and nothing to store.
 - **No telemetry.** Not even crash reporting. The counter in the header should stay at `0`.
@@ -78,6 +85,21 @@ any attempt to make one.
 - Post-export byte scan reports whether any EXIF / XMP / PNG text chunk / PDF author field survived.
 - Everything is keyboard- and touch-friendly, with mouse/touch coordinate mapping that survives zoom and pan.
 
+## Try it in 30 seconds
+
+No account, no install, no upload. Everything below happens on your machine.
+
+1. Open the [live app](https://jamamjadalone.is-a.dev/redact-zero/) and drop a PNG, JPEG, WebP
+   or multi-page PDF onto the canvas — or press **Try the demo ID** to use a synthetic specimen.
+2. Choose **Blackout**, **Pixelate** or **Whiteout**, then drag across the fields you want to
+   hide. Boxes stay editable until export: move, resize or delete them.
+3. Optionally add a watermark: pick a preset or type your own, then tune angle, opacity, size,
+   density and ink colour.
+4. Press **Export**, pick PNG, JPEG or PDF, and download the flattened result.
+5. Read the report: the finished bytes are scanned for EXIF, XMP, PNG text chunks and PDF
+   author fields, so you can see what did (or did not) survive.
+6. Want proof nothing left the tab? Open **Verify isolation** — the tripwire counter must read `0`.
+
 ## How it works
 
 ```
@@ -97,113 +119,6 @@ any attempt to make one.
 4. **Flatten** — the composite is a new canvas; there are no layers to remove.
 5. **Re-encode** — `canvas.toBlob()` (or `pdf-lib` for PDFs) produces a brand-new file containing only pixels. Source metadata cannot survive this step.
 6. **Verify** — the exported bytes are scanned for metadata markers before the file is handed to your download folder.
-
-## Quick start
-
-**Requirements:** Node.js 20+ and npm.
-
-```bash
-npm install
-npm run dev
-```
-
-Open the URL printed by Vite. The app is served under `/redact-zero/` by default so it matches
-GitHub Pages project sites:
-
-```
-http://localhost:5173/redact-zero/
-```
-
-Production build and local preview:
-
-```bash
-npm run build     # type-check + Vite build + service worker generation
-npm run preview
-```
-
-Regenerate the PWA icons (no native image tooling required):
-
-```bash
-npm run icons
-```
-
-## Quality gates
-
-`npm test` builds the app, then runs two independent suites. Both run in CI on every
-push to `main` and every pull request ([`quality.yml`](.github/workflows/quality.yml)),
-and the deploy workflow refuses to publish if either suite fails.
-
-```bash
-npm test          # pretest build → repo audit → browser smoke test
-npm run test:repo # static audit only (fast, no browser)
-npm run test:smoke # end-to-end browser test against dist/
-```
-
-**Repository audit** (`tests/repo-quality.test.mjs`) — zero dependencies, pure Node:
-
-- **Structure** — required source, PWA, docs and workflow files are all present.
-- **Package hygiene** — exactly two runtime dependencies, no install hooks, no
-  analytics/telemetry packages, lockfile resolves only from `registry.npmjs.org`.
-- **Security invariants** — CSP directives, no inline scripts, no remote URLs outside
-  `src/config.ts`, no `fetch`/`XHR`/`sendBeacon`/`WebSocket` in app code, no `eval`,
-  no console logging, no `TODO`/`FIXME`.
-- **PWA** — manifest fields, icon files whose real pixel dimensions match their declared
-  sizes, maskable icon, shortcuts, and consistent theme colours across HTML and manifest.
-- **Docs** — README sections, badges and screenshot links resolve; MIT license; no
-  committed secrets; no repository file over 2 MB.
-- **Build budget** — self-contained `dist/` with no source maps, bundled pdf.js worker,
-  ≥ 15 precached assets, < 4 MB total, main JS < 600 KB, CSS < 90 KB.
-- **UI contract** — the stable element IDs the smoke test drives still exist.
-
-**Browser smoke test** (`tests/smoke.test.mjs`) — headless Chrome over the DevTools
-protocol against the real production build, served from a temporary static server:
-
-1. Boots with the CSP enforced, one `h1`, no horizontal overflow.
-2. Loads the synthetic demo ID, switches tools, draws a redaction, undoes and redoes it.
-3. Exports a flattened PNG **and** PDF, waits for real download files, and asserts the
-   metadata scrub report.
-4. Opens the isolation dialog and asserts the tripwire counter is `0` and the displayed
-   policy matches the enforced policy verbatim.
-5. Fails on **any** cross-origin request, failed asset, or console error.
-6. Reloads through the service worker, goes fully offline, and renders the demo again.
-
-The browser suite skips gracefully when Chrome is unavailable (set `CHROME_PATH`) or the
-Node runtime has no built-in `WebSocket` (Node 22+ is required). Failures write a
-screenshot to `test-results/`, which CI uploads as an artifact.
-
-## Deploy to GitHub Pages
-
-This repository ships with a ready-to-run workflow at
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
-
-1. Push the repository to GitHub.
-2. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. Push to `main`. The workflow runs `npm ci && npm test` (audit + build + browser smoke
-   test) and only publishes `dist/` when every gate passes.
-4. Your app appears at `https://<user>.github.io/redact-zero/`.
-
-### Deploying somewhere else
-
-The base path is controlled by `VITE_BASE`:
-
-```bash
-# root domain (e.g. Netlify, Vercel, Cloudflare Pages)
-VITE_BASE=/ npm run build
-
-# custom sub-path
-VITE_BASE=/tools/redact/ npm run build
-```
-
-Update `id`, `start_url`, `scope` and icon paths in [`public/manifest.json`](public/manifest.json)
-if you rename the repository or mount it under a different path.
-
-## Progressive Web App
-
-- `vite-plugin-pwa` generates the service worker (`registerType: 'autoUpdate'`).
-- All JS, CSS, HTML, icons and the pdf.js worker are precached — including the offline PDF path.
-- Hand-written [`public/manifest.json`](public/manifest.json): standalone display, dark theme,
-  maskable icon, app shortcuts.
-- Install it from Chrome/Edge ("Install app") or Safari ("Add to Home Screen").
 
 ## Security model
 
@@ -236,19 +151,151 @@ if you rename the repository or mount it under a different path.
 - **Your device is the trust boundary.** A compromised browser or malicious extension can still
   read what is on screen. RedactZero removes the server from the equation, not the endpoint.
 
-## Tech stack
+## FAQ
 
-| Layer | Choice |
+<details>
+<summary><strong>Is it really free?</strong></summary>
+
+Yes. MIT licensed, no account, no quota, no upsell — and no server bill, because there is no server.
+</details>
+
+<details>
+<summary><strong>Does anything leave my device?</strong></summary>
+
+No. The app is a static page; files are decoded, composited and re-encoded locally. Confirm it in
+DevTools → Network, or switch off Wi-Fi after the first load and keep working.
+</details>
+
+<details>
+<summary><strong>Does it work offline?</strong></summary>
+
+Yes. Install it as a PWA and a service worker caches the app shell, the PDF worker and every asset.
+</details>
+
+<details>
+<summary><strong>Does it work on iPhone and iPad?</strong></summary>
+
+Yes, in Safari — use Share → **Add to Home Screen** for the offline version. Very large multi-page
+PDFs are memory-hungry on older phones; split them first if needed.
+</details>
+
+<details>
+<summary><strong>Are pixelated fields safe?</strong></summary>
+
+Treat pixelation as a visual control, not a guarantee. For anything sensitive — ID numbers, dates
+of birth, signatures — use **Blackout**, which writes opaque pixels.
+</details>
+
+<details>
+<summary><strong>Why are exported PDFs bigger and not searchable?</strong></summary>
+
+Because every page is rebuilt as a single raster image. That is deliberate: it destroys hidden text
+layers, annotations and metadata. PNG is lossless but large; JPEG trades quality for size.
+</details>
+
+<details>
+<summary><strong>Can the watermark prove authorship?</strong></summary>
+
+No. It makes casual reuse traceable and awkward, but a determined attacker can crop it. It is a
+deterrent, not a signature.
+</details>
+
+<details>
+<summary><strong>How do I know the code does what it claims?</strong></summary>
+
+The app has two runtime dependencies and a small, readable TypeScript codebase. The isolation dialog,
+the CSP, the tripwire counter and the automated quality gates below all point at the same promise —
+and the source is public.
+</details>
+
+## Progressive Web App
+
+- `vite-plugin-pwa` generates the service worker (`registerType: 'autoUpdate'`).
+- All JS, CSS, HTML, icons and the pdf.js worker are precached — including the offline PDF path.
+- Hand-written [`public/manifest.json`](public/manifest.json): standalone display, dark theme,
+  maskable icon, app shortcuts.
+- Install it from Chrome/Edge ("Install app") or Safari ("Add to Home Screen").
+
+## For developers
+
+### Quick start
+
+**Requirements:** Node.js 20+ for the build; Node.js 22+ to run the full browser suite (it uses
+the built-in `WebSocket` client). Chrome or Chromium is required for the smoke test — set
+`CHROME_PATH` if it is not in a standard location.
+
+```bash
+git clone https://github.com/jamamjadalone/redact-zero.git
+cd redact-zero
+npm install
+npm run dev
+```
+
+The app is served under `/redact-zero/` by default so it matches GitHub Pages project sites:
+
+```
+http://localhost:5173/redact-zero/
+```
+
+### Scripts
+
+| Command | What it does |
 | --- | --- |
-| Build | Vite 6 + TypeScript (strict) |
-| Styling | Tailwind CSS 3, custom dark "cyber-minimalist" design system |
-| PDF input | `pdfjs-dist` (worker-based, 2× rendering) |
-| PDF output | `pdf-lib` (flattened raster pages, neutral metadata) |
-| PWA | `vite-plugin-pwa` / Workbox |
-| Icons | Hand-authored inline SVG (zero icon-font payload) |
-| Runtime deps | `pdfjs-dist`, `pdf-lib` — nothing else |
+| `npm run dev` | Vite dev server at `http://localhost:5173/redact-zero/` |
+| `npm run build` | Type-check + production build + service worker generation |
+| `npm run preview` | Serve the production build locally |
+| `npm test` | Build, then run the repository audit and the browser smoke test |
+| `npm run test:repo` | Static audit only — fast, no browser |
+| `npm run test:smoke` | Headless-Chrome end-to-end test against `dist/` |
+| `npm run icons` | Regenerate the PWA icons (no native image tooling required) |
 
-## Project structure
+### Quality gates
+
+`npm test` builds the app, then runs two independent suites. Both run in CI on every push to
+`main` and every pull request ([`quality.yml`](.github/workflows/quality.yml)), and the deploy
+workflow refuses to publish if either suite fails.
+
+<details>
+<summary><strong>Repository audit</strong> — <code>tests/repo-quality.test.mjs</code>, zero dependencies, pure Node</summary>
+
+- **Structure** — required source, PWA, docs and workflow files are all present.
+- **Package hygiene** — exactly two runtime dependencies, no install hooks, no
+  analytics/telemetry packages, lockfile resolves only from `registry.npmjs.org`.
+- **Security invariants** — CSP directives, no inline scripts, no remote URLs outside
+  `src/config.ts`, no `fetch`/`XHR`/`sendBeacon`/`WebSocket` in app code, no `eval`,
+  no console logging, no `TODO`/`FIXME`.
+- **PWA** — manifest fields, icon files whose real pixel dimensions match their declared
+  sizes, maskable icon, shortcuts, and consistent theme colours across HTML and manifest.
+- **Docs** — README sections, badges and screenshot links resolve; MIT license; no
+  committed secrets; no repository file over 2 MB.
+- **Build budget** — self-contained `dist/` with no source maps, bundled pdf.js worker,
+  ≥ 15 precached assets, < 4 MB total, main JS < 600 KB, CSS < 90 KB.
+- **UI contract** — the stable element IDs the smoke test drives still exist.
+
+</details>
+
+<details>
+<summary><strong>Browser smoke test</strong> — <code>tests/smoke.test.mjs</code>, headless Chrome over the DevTools protocol</summary>
+
+1. Boots with the CSP enforced, one `h1`, no horizontal overflow.
+2. Loads the synthetic demo ID, switches tools, draws a redaction, undoes and redoes it.
+3. Exports a flattened PNG **and** PDF, waits for real download files, and asserts the
+   metadata scrub report.
+4. Opens the isolation dialog and asserts the tripwire counter is `0` and the displayed
+   policy matches the enforced policy verbatim.
+5. Fails on **any** cross-origin request, failed asset, or console error.
+6. Reloads through the service worker, goes fully offline, and renders the demo again.
+
+</details>
+
+The browser suite skips gracefully when Chrome is unavailable or the Node runtime has no
+built-in `WebSocket` (Node 22+ is required). Failures write a screenshot to `test-results/`,
+which CI uploads as an artifact.
+
+### Project structure
+
+<details>
+<summary>Show the tree</summary>
 
 ```
 redact-zero/
@@ -297,6 +344,58 @@ redact-zero/
 └── README.md
 ```
 
+</details>
+
+### Tech stack
+
+| Layer | Choice |
+| --- | --- |
+| Build | Vite 6 + TypeScript (strict) |
+| Styling | Tailwind CSS 3, custom dark "cyber-minimalist" design system |
+| PDF input | `pdfjs-dist` (worker-based, 2× rendering) |
+| PDF output | `pdf-lib` (flattened raster pages, neutral metadata) |
+| PWA | `vite-plugin-pwa` / Workbox |
+| Icons | Hand-authored inline SVG (zero icon-font payload) |
+| Runtime deps | `pdfjs-dist`, `pdf-lib` — nothing else |
+
+### Deploy to GitHub Pages
+
+This repository ships with a ready-to-run workflow at
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
+
+1. Push the repository to GitHub.
+2. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
+3. Push to `main`. The workflow runs `npm ci && npm test` (audit + build + browser smoke
+   test) and only publishes `dist/` when every gate passes.
+4. Your app appears at `https://<user>.github.io/redact-zero/`.
+
+#### Deploying somewhere else
+
+The base path is controlled by `VITE_BASE`:
+
+```bash
+# root domain (e.g. Netlify, Vercel, Cloudflare Pages)
+VITE_BASE=/ npm run build
+
+# custom sub-path
+VITE_BASE=/tools/redact/ npm run build
+```
+
+Update `id`, `start_url`, `scope` and icon paths in [`public/manifest.json`](public/manifest.json)
+if you rename the repository or mount it under a different path.
+
+### Contributing
+
+Issues and pull requests are welcome. Please keep the zero-network promise intact: any change
+that adds a third-party request, remote font, analytics call or backend dependency will be
+rejected.
+
+```bash
+npm install
+npm run dev      # http://localhost:5173/redact-zero/
+npm test         # audit + build + browser smoke test (required before a PR)
+```
+
 ## Legal & privacy disclaimer
 
 RedactZero is a privacy tool, not a legal service. It is designed to support **data
@@ -309,18 +408,6 @@ frameworks: share only the fields a recipient genuinely needs.
   minimisation reduce risk; they do not eliminate it.
 - RedactZero is provided **"as is"**, without warranty of any kind. See [LICENSE](LICENSE).
 - Nothing here is legal advice.
-
-## Contributing
-
-Issues and pull requests are welcome. Please keep the zero-network promise intact: any change
-that adds a third-party request, remote font, analytics call or backend dependency will be
-rejected.
-
-```bash
-npm install
-npm run dev      # http://localhost:5173/redact-zero/
-npm test         # audit + build + browser smoke test (required before a PR)
-```
 
 ## License
 
