@@ -17,7 +17,7 @@ export function createHeader(actions: HeaderActions): HTMLElement {
   header.innerHTML = `
     <div class="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/35 to-transparent"></div>
     <div class="flex h-[60px] items-center gap-2.5 px-3 sm:px-5">
-      <a href="./" class="group flex min-w-0 items-center gap-2.5 rounded-xl" aria-label="RedactZero home">
+      <a href="./" class="group flex min-w-0 items-center gap-2.5 rounded-xl">
         <span class="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-[13px] border border-emerald-400/25 bg-gradient-to-br from-[#0f2b26] to-[#06100d] text-emerald-300 shadow-[0_0_26px_-8px_rgba(52,211,153,0.65)] transition group-hover:border-emerald-400/45 group-hover:shadow-[0_0_32px_-6px_rgba(52,211,153,0.8)]">
           <span class="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/10 to-transparent"></span>
           ${icon('shieldCheck', 'h-[18px] w-[18px]')}
