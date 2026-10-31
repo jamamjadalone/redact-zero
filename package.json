@@ -33,7 +33,11 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "pretest": "npm run build",
+    "test": "node --test --test-concurrency=1 tests/repo-quality.test.mjs tests/smoke.test.mjs",
+    "test:repo": "node --test tests/repo-quality.test.mjs",
+    "test:smoke": "node --test tests/smoke.test.mjs"
   },
   "dependencies": {
     "pdf-lib": "^1.17.1",

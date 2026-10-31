@@ -1,12 +1,25 @@
+import { REPO_URL } from '../config';
 import { icon } from '../utils/icons';
 import { networkGuard } from '../utils/networkGuard';
 import { toast } from '../utils/toast';
 import { openModal } from './Modal';
 
-const CSP =
-  "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'";
+/**
+ * Always show the policy that the browser actually enforces. Reading it from
+ * the document avoids the app drifting out of sync with index.html.
+ */
+function readCsp(): string {
+  const meta = document.querySelector<HTMLMetaElement>(
+    'meta[http-equiv="Content-Security-Policy"]',
+  );
+  return (
+    meta?.content.trim() ||
+    "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'"
+  );
+}
 
 export function openIsolationDialog(): void {
+  const csp = readCsp();
   const modal = openModal({
     title: 'Verify zero-network isolation',
     subtitle: 'RedactZero is a static page. Here is how to prove nothing leaves this tab.',
@@ -60,12 +73,12 @@ export function openIsolationDialog(): void {
             <p class="field-label">Enforced Content-Security-Policy</p>
             <button type="button" data-copy-csp class="btn-quiet px-2 py-1 text-[10px]">${icon('copy', 'h-3 w-3')} Copy</button>
           </div>
-          <pre class="mt-1.5 overflow-x-auto rounded-xl border border-white/[0.06] bg-black/40 p-3 font-mono text-[10px] leading-relaxed text-slate-400">${CSP}</pre>
+          <pre class="mt-1.5 overflow-x-auto rounded-xl border border-white/[0.06] bg-black/40 p-3 font-mono text-[10px] leading-relaxed text-slate-400">${csp}</pre>
         </div>
       </div>
     `,
     footer: `
-      <a href="https://github.com/jamamjadalone/redact-zero" target="_blank" rel="noopener noreferrer" class="btn-ghost">
+      <a href="${REPO_URL}" target="_blank" rel="noopener noreferrer" class="btn-ghost">
         ${icon('github', 'h-4 w-4')} Read the source
       </a>
       <button type="button" class="btn-primary" data-done>Got it</button>
@@ -93,7 +106,7 @@ export function openIsolationDialog(): void {
 
   modal.body.querySelector('[data-copy-csp]')?.addEventListener('click', async () => {
     try {
-      await navigator.clipboard.writeText(CSP);
+      await navigator.clipboard.writeText(csp);
       toast('Content-Security-Policy copied to clipboard.', 'success');
     } catch {
       toast('Clipboard access was blocked by the browser.', 'error');

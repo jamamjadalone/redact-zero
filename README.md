@@ -9,6 +9,7 @@
 Redact. Watermark. Flatten. Nothing ever leaves your device.
 
 [![MIT License](https://img.shields.io/badge/license-MIT-34d399?style=flat-square)](LICENSE)
+[![Quality gates](https://github.com/jamamjadalone/redact-zero/actions/workflows/quality.yml/badge.svg)](https://github.com/jamamjadalone/redact-zero/actions/workflows/quality.yml)
 [![Zero Telemetry](https://img.shields.io/badge/telemetry-0-34d399?style=flat-square)](#security-model)
 [![100% Client-Side](https://img.shields.io/badge/client--side-100%25-34d399?style=flat-square)](#security-model)
 [![Works Offline](https://img.shields.io/badge/offline-ready-38bdf8?style=flat-square)](#progressive-web-app)
@@ -126,6 +127,50 @@ Regenerate the PWA icons (no native image tooling required):
 npm run icons
 ```
 
+## Quality gates
+
+`npm test` builds the app, then runs two independent suites. Both run in CI on every
+push to `main` and every pull request ([`quality.yml`](.github/workflows/quality.yml)),
+and the deploy workflow refuses to publish if either suite fails.
+
+```bash
+npm test          # pretest build → repo audit → browser smoke test
+npm run test:repo # static audit only (fast, no browser)
+npm run test:smoke # end-to-end browser test against dist/
+```
+
+**Repository audit** (`tests/repo-quality.test.mjs`) — zero dependencies, pure Node:
+
+- **Structure** — required source, PWA, docs and workflow files are all present.
+- **Package hygiene** — exactly two runtime dependencies, no install hooks, no
+  analytics/telemetry packages, lockfile resolves only from `registry.npmjs.org`.
+- **Security invariants** — CSP directives, no inline scripts, no remote URLs outside
+  `src/config.ts`, no `fetch`/`XHR`/`sendBeacon`/`WebSocket` in app code, no `eval`,
+  no console logging, no `TODO`/`FIXME`.
+- **PWA** — manifest fields, icon files whose real pixel dimensions match their declared
+  sizes, maskable icon, shortcuts, and consistent theme colours across HTML and manifest.
+- **Docs** — README sections, badges and screenshot links resolve; MIT license; no
+  committed secrets; no repository file over 2 MB.
+- **Build budget** — self-contained `dist/` with no source maps, bundled pdf.js worker,
+  ≥ 15 precached assets, < 4 MB total, main JS < 600 KB, CSS < 90 KB.
+- **UI contract** — the stable element IDs the smoke test drives still exist.
+
+**Browser smoke test** (`tests/smoke.test.mjs`) — headless Chrome over the DevTools
+protocol against the real production build, served from a temporary static server:
+
+1. Boots with the CSP enforced, one `h1`, no horizontal overflow.
+2. Loads the synthetic demo ID, switches tools, draws a redaction, undoes and redoes it.
+3. Exports a flattened PNG **and** PDF, waits for real download files, and asserts the
+   metadata scrub report.
+4. Opens the isolation dialog and asserts the tripwire counter is `0` and the displayed
+   policy matches the enforced policy verbatim.
+5. Fails on **any** cross-origin request, failed asset, or console error.
+6. Reloads through the service worker, goes fully offline, and renders the demo again.
+
+The browser suite skips gracefully when Chrome is unavailable (set `CHROME_PATH`) or the
+Node runtime has no built-in `WebSocket` (Node 22+ is required). Failures write a
+screenshot to `test-results/`, which CI uploads as an artifact.
+
 ## Deploy to GitHub Pages
 
 This repository ships with a ready-to-run workflow at
@@ -133,7 +178,8 @@ This repository ships with a ready-to-run workflow at
 
 1. Push the repository to GitHub.
 2. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. Push to `main`. The workflow builds with `npm ci && npm run build` and publishes `dist/`.
+3. Push to `main`. The workflow runs `npm ci && npm test` (audit + build + browser smoke
+   test) and only publishes `dist/` when every gate passes.
 4. Your app appears at `https://<user>.github.io/redact-zero/`.
 
 ### Deploying somewhere else
@@ -206,7 +252,9 @@ if you rename the repository or mount it under a different path.
 
 ```
 redact-zero/
-├── .github/workflows/deploy.yml   # GitHub Pages CI
+├── .github/workflows/
+│   ├── deploy.yml                 # build + test + GitHub Pages publish
+│   └── quality.yml                # audit and browser gates on push / PR
 ├── public/
 │   ├── favicon.svg
 │   ├── icon-192.png · icon-512.png · icon-maskable-512.png
@@ -242,6 +290,9 @@ redact-zero/
 │   ├── style.css
 │   └── types.ts
 ├── index.html                     # CSP + PWA meta
+├── tests/
+│   ├── repo-quality.test.mjs      # dependency-free repository audit
+│   └── smoke.test.mjs             # headless-Chrome end-to-end gates
 ├── vite.config.ts
 └── README.md
 ```
@@ -268,7 +319,7 @@ rejected.
 ```bash
 npm install
 npm run dev      # http://localhost:5173/redact-zero/
-npm run build    # type-check + production build
+npm test         # audit + build + browser smoke test (required before a PR)
 ```
 
 ## License
