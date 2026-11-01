@@ -66,8 +66,12 @@ test('repository has the expected structure', async () => {
     'tailwind.config.js',
     'postcss.config.js',
     'README.md',
+    'SECURITY.md',
     'LICENSE',
     '.gitignore',
+    '.github/dependabot.yml',
+    '.github/ISSUE_TEMPLATE/bug_report.yml',
+    '.github/ISSUE_TEMPLATE/config.yml',
     '.github/workflows/deploy.yml',
     '.github/workflows/quality.yml',
     'public/manifest.json',
@@ -115,7 +119,7 @@ test('package.json is minimal, honest and wired for tests', () => {
   assert.equal(pkg.private, true);
   assert.equal(pkg.license, 'MIT');
   assert.match(pkg.version, /^\d+\.\d+\.\d+$/);
-  assert.equal(pkg.homepage, 'https://jamamjadalone.github.io/redact-zero/');
+  assert.equal(pkg.homepage, 'https://jamamjadalone.is-a.dev/redact-zero/');
   assert.equal(pkg.repository.url, 'git+https://github.com/jamamjadalone/redact-zero.git');
 
   for (const script of ['dev', 'build', 'preview', 'pretest', 'test', 'test:repo', 'test:smoke']) {
@@ -343,6 +347,7 @@ test('README, license and screenshots are present and linked', async () => {
     assert.ok(readme.includes(phrase), `README is missing: ${phrase}`);
   }
   assert.ok(readme.includes('https://jamamjadalone.github.io/redact-zero/'));
+  assert.ok(readme.includes('SECURITY.md'), 'README should link the security policy');
   assert.match(readme, /actions\/workflows\/quality\.yml\/badge\.svg/);
 
   const images = [...readme.matchAll(/docs\/[\w.-]+\.png/g)].map((match) => match[0]);
@@ -354,6 +359,29 @@ test('README, license and screenshots are present and linked', async () => {
   const license = await read('LICENSE');
   assert.match(license, /MIT License/);
   assert.match(license, /2026 jamamjadalone/);
+});
+
+test('security policy, issue template and dependency updates are configured', async () => {
+  const security = await read('SECURITY.md');
+  assert.match(security, /Reporting a vulnerability/i);
+  assert.match(security, /security\/advisories\/new/);
+  assert.match(security, /never attach a real id/i);
+  assert.match(security, /In scope:/);
+  assert.match(security, /Out of scope:/);
+
+  const template = await read('.github/ISSUE_TEMPLATE/bug_report.yml');
+  assert.match(template, /Never upload a real ID/i);
+  assert.match(template, /required: true/);
+  assert.match(template, /privacy/i);
+
+  const issueConfig = await read('.github/ISSUE_TEMPLATE/config.yml');
+  assert.match(issueConfig, /blank_issues_enabled:\s*false/);
+  assert.match(issueConfig, /security\/advisories\/new/);
+
+  const dependabot = await read('.github/dependabot.yml');
+  assert.match(dependabot, /package-ecosystem:\s*npm/);
+  assert.match(dependabot, /package-ecosystem:\s*github-actions/);
+  assert.match(dependabot, /interval:\s*weekly/);
 });
 
 test('no secrets or oversized files are committed', async () => {

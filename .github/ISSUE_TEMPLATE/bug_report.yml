@@ -1,0 +1,70 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Do not attach real documents
+
+        **Never upload a real ID, passport, driving licence, bank statement, utility bill or any
+        other personal document.** Use the built-in demo document, or a synthetic file you
+        created. Redact or replace all personal data in screenshots, logs and file names.
+
+        Security vulnerabilities must not be reported here — follow
+        [SECURITY.md](https://github.com/jamamjadalone/redact-zero/blob/main/SECURITY.md).
+
+  - type: input
+    id: version
+    attributes:
+      label: RedactZero version
+      description: Shown in the header, or the commit SHA if you run from source.
+      placeholder: v1.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: Chrome 140 on Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use the demo document or a synthetic file only.
+      placeholder: |
+        1. Open the app
+        2. Drop a synthetic PDF
+        3. Click Export
+        4. See the error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I have not attached any real identity document or personal data.
+          required: true
+        - label: This is not a security vulnerability (those go through SECURITY.md).
+          required: true

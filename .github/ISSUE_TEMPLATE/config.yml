@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/jamamjadalone/redact-zero/security/advisories/new
+    about: Report security issues privately. Never attach a real ID or personal document.
+  - name: Try the live app first
+    url: https://jamamjadalone.is-a.dev/redact-zero/
+    about: Check whether the bug still happens on the latest build before filing it.

@@ -6,7 +6,7 @@
   "description": "Zero-knowledge, 100% client-side ID & KYC document redactor with anti-fraud watermarking. No uploads, no telemetry, works offline.",
   "license": "MIT",
   "author": "jamamjadalone",
-  "homepage": "https://jamamjadalone.github.io/redact-zero/",
+  "homepage": "https://jamamjadalone.is-a.dev/redact-zero/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jamamjadalone/redact-zero.git"

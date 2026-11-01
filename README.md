@@ -367,6 +367,10 @@ Issues and pull requests are welcome. Please keep the zero-network promise intac
 that adds a third-party request, remote font, analytics call or backend dependency will be
 rejected.
 
+**Never attach a real ID, passport, bank statement or any other personal document to an issue.**
+Use the demo document or a synthetic file. Security problems should go through the private
+process in [SECURITY.md](SECURITY.md), not a public issue.
+
 ```bash
 npm install
 npm run dev      # http://localhost:5173/redact-zero/
@@ -392,6 +396,8 @@ frameworks: share only the fields a recipient genuinely needs.
 - **GitHub Pages mirror:** https://jamamjadalone.github.io/redact-zero/
 - **Verify zero-network isolation:** https://jamamjadalone.is-a.dev/redact-zero/?action=verify
 - **Report a bug:** https://github.com/jamamjadalone/redact-zero/issues
+- **Security policy:** https://github.com/jamamjadalone/redact-zero/blob/main/SECURITY.md
+- **Releases:** https://github.com/jamamjadalone/redact-zero/releases
 - **Source:** https://github.com/jamamjadalone/redact-zero
 
 ## License
