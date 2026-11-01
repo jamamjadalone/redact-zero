@@ -1,67 +1,37 @@
-<div align="center">
-
-<img src="public/favicon.svg" width="88" height="88" alt="RedactZero logo" />
-
 # RedactZero
 
-**Redact IDs, passports and KYC documents without uploading them anywhere.**
+Redact IDs, passports and KYC documents in your browser. Nothing is uploaded, nothing is
+tracked, and it keeps working with the network off.
 
-Blackout · pixelate · watermark · flatten — entirely in your browser tab.
+![RedactZero with a specimen ID open, a passport number blacked out and a verification watermark across the page](docs/screenshot.png)
 
-[![Open RedactZero](https://img.shields.io/badge/Open_RedactZero-now-34d399?style=for-the-badge&logo=googlechrome&logoColor=white)](https://jamamjadalone.is-a.dev/redact-zero/)
-[![Verify isolation](https://img.shields.io/badge/Verify_isolation-0_requests-38bdf8?style=for-the-badge)](https://jamamjadalone.is-a.dev/redact-zero/?action=verify)
+Black out, pixelate or white out any part of a photo or PDF, add a traceable watermark, and
+export a flattened file with no hidden text layer and no metadata. The whole pipeline runs in
+the tab: there is no backend, no account, no analytics and no remote fonts.
 
-[![MIT License](https://img.shields.io/badge/license-MIT-34d399?style=flat-square)](LICENSE)
+It is free and MIT licensed, so you can use it at home, at work, or inside something you sell.
+
 [![Quality gates](https://github.com/jamamjadalone/redact-zero/actions/workflows/quality.yml/badge.svg)](https://github.com/jamamjadalone/redact-zero/actions/workflows/quality.yml)
-[![Zero Telemetry](https://img.shields.io/badge/telemetry-0-34d399?style=flat-square)](#security-model)
-[![100% Client-Side](https://img.shields.io/badge/client--side-100%25-34d399?style=flat-square)](#security-model)
-[![Works Offline](https://img.shields.io/badge/offline-ready-38bdf8?style=flat-square)](#progressive-web-app)
-[![PWA](https://img.shields.io/badge/PWA-installable-38bdf8?style=flat-square)](#progressive-web-app)
-
-[**Live app**](https://jamamjadalone.is-a.dev/redact-zero/) ·
-[GitHub Pages mirror](https://jamamjadalone.github.io/redact-zero/) ·
-[Report a bug](https://github.com/jamamjadalone/redact-zero/issues) ·
-[How it works](#how-it-works)
-
-</div>
-
----
-
-![RedactZero interface](docs/screenshot.png)
-
-<p align="center">
-  <img src="docs/screenshot-export.png" width="49%" alt="Export dialog with flattened PNG/JPEG/PDF output and metadata scrub verification" />
-  <img src="docs/screenshot-offline.png" width="49%" alt="RedactZero running with the network disconnected" />
-</p>
 
 ## Why RedactZero?
 
-Every day, people send photographs of passports, national ID cards, utility bills and bank
+Every day, people send photographs of passports, driving licences, utility bills and bank
 statements to landlords, employers, crypto exchanges and "verification" portals. Those copies
-are stored on servers you do not control, forwarded through inboxes, indexed by backups, and
-eventually leaked. A single unredacted ID is enough to power SIM-swap attacks, loan fraud and
+live on servers you do not control, get forwarded through inboxes, end up in backups, and
+eventually leak. A single unredacted ID is enough to power SIM-swap attacks, loan fraud and
 full identity theft.
 
-Most "free online redaction" tools make the problem worse: they **upload the original
-document** to a server, draw a box on a copy, and hand back a file whose hidden text layer,
-metadata and original uploads still exist somewhere. Some PDF "redactions" are just black
-rectangles layered on top of selectable text — anyone can drag them away.
+Most free online redaction tools make the problem worse. They upload the original document to
+a server, let you draw a box on a copy, and hand back a file whose hidden text layer, metadata
+and original upload still exist somewhere. Some PDF "redactions" are just black rectangles on
+top of selectable text — anyone can drag them away.
 
-**RedactZero takes the opposite approach.** The entire pipeline — decoding, rendering,
-redacting, watermarking, re-encoding — runs in your browser tab. There is no backend, no
-account, no analytics, no remote fonts and no network requests. The app ships with a
-Content-Security-Policy that blocks outbound connections and a runtime tripwire that counts
-any attempt to make one.
+RedactZero does the opposite. Decoding, rendering, redacting, watermarking and re-encoding all
+happen in your browser tab. A Content-Security-Policy blocks outbound connections, and a
+runtime tripwire counts any attempt to make one.
 
-> "Zero-knowledge" here is plain English, not a cryptographic proof: there is no server, so
-> there is nothing that *could* know about your document.
-
-- **No uploads.** Files are read from disk into memory with the File API.
-- **No accounts.** There is nothing to sign up for and nothing to store.
-- **No telemetry.** Not even crash reporting. The counter in the header should stay at `0`.
-- **No hidden layers.** Exports are rasterised; redactions become opaque pixels.
-- **No EXIF.** Camera model, GPS, timestamps and software tags are destroyed by re-encoding.
-- **Works offline.** Install it once as a PWA and it keeps working with Wi-Fi switched off.
+"Zero-knowledge" here means the everyday thing: there is no server, so nothing can know about
+your document. It is not a cryptographic proof.
 
 ## Features
 
@@ -85,17 +55,20 @@ any attempt to make one.
 - Post-export byte scan reports whether any EXIF / XMP / PNG text chunk / PDF author field survived.
 - Everything is keyboard- and touch-friendly, with mouse/touch coordinate mapping that survives zoom and pan.
 
-## Try it in 30 seconds
+![The export dialog: format picker, JPEG quality slider and the metadata scrub report](docs/screenshot-export.png)
 
-No account, no install, no upload. Everything below happens on your machine.
+## Try it
 
-1. Open the [live app](https://jamamjadalone.is-a.dev/redact-zero/) and drop a PNG, JPEG, WebP
-   or multi-page PDF onto the canvas — or press **Try the demo ID** to use a synthetic specimen.
-2. Choose **Blackout**, **Pixelate** or **Whiteout**, then drag across the fields you want to
+Open [the live app](https://jamamjadalone.is-a.dev/redact-zero/) — no account, no install. Or
+install it as a PWA (see below) and keep using it offline.
+
+1. Drop a PNG, JPEG, WebP or multi-page PDF onto the canvas, or press **Try the demo ID** to
+   use a synthetic specimen.
+2. Pick **Blackout**, **Pixelate** or **Whiteout**, then drag across the fields you want to
    hide. Boxes stay editable until export: move, resize or delete them.
-3. Optionally add a watermark: pick a preset or type your own, then tune angle, opacity, size,
-   density and ink colour.
-4. Press **Export**, pick PNG, JPEG or PDF, and download the flattened result.
+3. Optionally add a watermark — choose a preset or type your own, then tune angle, opacity,
+   size, density and ink colour.
+4. Press **Export**, choose PNG, JPEG or PDF, and download the flattened result.
 5. Read the report: the finished bytes are scanned for EXIF, XMP, PNG text chunks and PDF
    author fields, so you can see what did (or did not) survive.
 6. Want proof nothing left the tab? Open **Verify isolation** — the tripwire counter must read `0`.
@@ -216,13 +189,12 @@ and the source is public.
   maskable icon, app shortcuts.
 - Install it from Chrome/Edge ("Install app") or Safari ("Add to Home Screen").
 
-## For developers
+![RedactZero running with the network disconnected](docs/screenshot-offline.png)
 
-### Quick start
+## Quick start
 
-**Requirements:** Node.js 20+ for the build; Node.js 22+ to run the full browser suite (it uses
-the built-in `WebSocket` client). Chrome or Chromium is required for the smoke test — set
-`CHROME_PATH` if it is not in a standard location.
+You need [Node.js](https://nodejs.org) 20+ and npm for the build. The full browser test suite
+also needs Node 22+ and Chrome or Chromium — set `CHROME_PATH` if it is not in a standard place.
 
 ```bash
 git clone https://github.com/jamamjadalone/redact-zero.git
@@ -237,7 +209,7 @@ The app is served under `/redact-zero/` by default so it matches GitHub Pages pr
 http://localhost:5173/redact-zero/
 ```
 
-### Scripts
+## Commands
 
 | Command | What it does |
 | --- | --- |
@@ -249,7 +221,7 @@ http://localhost:5173/redact-zero/
 | `npm run test:smoke` | Headless-Chrome end-to-end test against `dist/` |
 | `npm run icons` | Regenerate the PWA icons (no native image tooling required) |
 
-### Quality gates
+## Quality gates
 
 `npm test` builds the app, then runs two independent suites. Both run in CI on every push to
 `main` and every pull request ([`quality.yml`](.github/workflows/quality.yml)), and the deploy
@@ -292,7 +264,7 @@ The browser suite skips gracefully when Chrome is unavailable or the Node runtim
 built-in `WebSocket` (Node 22+ is required). Failures write a screenshot to `test-results/`,
 which CI uploads as an artifact.
 
-### Project structure
+## Project structure
 
 <details>
 <summary>Show the tree</summary>
@@ -346,7 +318,7 @@ redact-zero/
 
 </details>
 
-### Tech stack
+## Tech stack
 
 | Layer | Choice |
 | --- | --- |
@@ -358,7 +330,7 @@ redact-zero/
 | Icons | Hand-authored inline SVG (zero icon-font payload) |
 | Runtime deps | `pdfjs-dist`, `pdf-lib` — nothing else |
 
-### Deploy to GitHub Pages
+## Deploy to GitHub Pages
 
 This repository ships with a ready-to-run workflow at
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
@@ -369,7 +341,7 @@ This repository ships with a ready-to-run workflow at
    test) and only publishes `dist/` when every gate passes.
 4. Your app appears at `https://<user>.github.io/redact-zero/`.
 
-#### Deploying somewhere else
+### Deploying somewhere else
 
 The base path is controlled by `VITE_BASE`:
 
@@ -384,7 +356,7 @@ VITE_BASE=/tools/redact/ npm run build
 Update `id`, `start_url`, `scope` and icon paths in [`public/manifest.json`](public/manifest.json)
 if you rename the repository or mount it under a different path.
 
-### Contributing
+## Contributing
 
 Issues and pull requests are welcome. Please keep the zero-network promise intact: any change
 that adds a third-party request, remote font, analytics call or backend dependency will be
@@ -409,6 +381,14 @@ frameworks: share only the fields a recipient genuinely needs.
 - RedactZero is provided **"as is"**, without warranty of any kind. See [LICENSE](LICENSE).
 - Nothing here is legal advice.
 
+## Links
+
+- **Live app:** https://jamamjadalone.is-a.dev/redact-zero/
+- **GitHub Pages mirror:** https://jamamjadalone.github.io/redact-zero/
+- **Verify zero-network isolation:** https://jamamjadalone.is-a.dev/redact-zero/?action=verify
+- **Report a bug:** https://github.com/jamamjadalone/redact-zero/issues
+- **Source:** https://github.com/jamamjadalone/redact-zero
+
 ## License
 
-[MIT](LICENSE) © 2026 jamamjadalone
+Released under the [MIT License](LICENSE). © 2026 jamamjadalone
