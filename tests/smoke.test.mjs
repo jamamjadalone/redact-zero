@@ -162,8 +162,12 @@ test('end-to-end browser smoke test', { skip: skipReason, timeout: 300_000 }, as
     let devtoolsPort = 0;
     for (let attempt = 0; attempt < 150; attempt += 1) {
       if (existsSync(portFile)) {
-        const [line] = (await readFile(portFile, 'utf8')).trim().split('\n');
-        devtoolsPort = Number(line);
+        try {
+          const [line] = (await readFile(portFile, 'utf8')).trim().split('\n');
+          devtoolsPort = Number(line);
+        } catch {
+          // Windows can briefly lock the file while Chrome is writing it.
+        }
         if (devtoolsPort) break;
       }
       await sleep(100);
@@ -194,6 +198,7 @@ test('end-to-end browser smoke test', { skip: skipReason, timeout: 300_000 }, as
     const requests = [];
     const failedResponses = [];
     const consoleErrors = [];
+    const dialogs = [];
 
     socket.addEventListener('message', (event) => {
       const message = JSON.parse(event.data);
@@ -212,6 +217,10 @@ test('end-to-end browser smoke test', { skip: skipReason, timeout: 300_000 }, as
           if (message.params.response.status >= 400) {
             failedResponses.push(`${message.params.response.status} ${message.params.response.url}`);
           }
+          break;
+        case 'Page.javascriptDialogOpening':
+          dialogs.push(message.params.type);
+          void send('Page.handleJavaScriptDialog', { accept: true }).catch(() => {});
           break;
         case 'Runtime.exceptionThrown':
           consoleErrors.push(
@@ -471,6 +480,29 @@ test('end-to-end browser smoke test', { skip: skipReason, timeout: 300_000 }, as
     t.diagnostic('network tripwire at 0 and CSP shown verbatim');
 
     /* -------------------------------------------------------------- */
+    /* 4b. Close-document flow and unsaved-work guard                 */
+    /* -------------------------------------------------------------- */
+
+    assert.equal(
+      await evaluate(`document.getElementById('close-btn').offsetWidth > 0`),
+      true,
+      'the close-document button should be visible once a document is open',
+    );
+    await click('#close-btn');
+    await waitFor('!!document.querySelector("dialog[open] [data-confirm]")', 'close confirmation');
+    await click('dialog[open] [data-cancel]');
+    await waitFor('!document.querySelector("dialog[open]")', 'close cancelled');
+    assert.match(await text('#file-strip'), /1 redaction/);
+
+    const guarded = await evaluate(`(() => {
+      const event = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    })()`);
+    assert.equal(guarded, true, 'unsaved redactions must guard against closing the tab');
+    t.diagnostic('close confirmation + unsaved-work guard ok');
+
+    /* -------------------------------------------------------------- */
     /* 5. Zero third-party traffic, zero console errors               */
     /* -------------------------------------------------------------- */
 
@@ -521,6 +553,38 @@ test('end-to-end browser smoke test', { skip: skipReason, timeout: 300_000 }, as
       downloadThroughput: -1,
       uploadThroughput: -1,
     });
+
+    /* -------------------------------------------------------------- */
+    /* 7. Close document, then HEIC guidance                          */
+    /* -------------------------------------------------------------- */
+
+    await click('#close-btn');
+    await waitFor('!!document.querySelector("dialog[open] [data-confirm]")', 'close confirmation');
+    await click('dialog[open] [data-confirm]');
+    await waitFor('!!document.getElementById("empty-demo")', 'empty state restored');
+    assert.equal(
+      await evaluate(`document.getElementById('close-btn').offsetWidth > 0`),
+      false,
+      'the close-document button must disappear when no document is open',
+    );
+    assert.equal(await evaluate(`document.getElementById('export-btn').disabled`), true);
+    t.diagnostic('close document returns to the empty state');
+
+    await evaluate(`(() => {
+      const file = new File([new Uint8Array([0, 0, 0, 0])], 'photo.heic', { type: 'image/heic' });
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      window.dispatchEvent(new DragEvent('drop', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: transfer,
+      }));
+    })()`);
+    await waitFor(
+      `(document.getElementById('toasts')?.innerText ?? '').includes('HEIC')`,
+      'HEIC guidance toast',
+    );
+    t.diagnostic('HEIC photos get a specific, actionable message');
   } catch (error) {
     try {
       const shot = await send?.('Page.captureScreenshot', { format: 'png', fromSurface: true });

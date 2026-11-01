@@ -2,15 +2,28 @@ import { CanvasEditor } from './components/CanvasEditor';
 import { openExportDialog } from './components/ExportModal';
 import { createHeader } from './components/Header';
 import { openIsolationDialog } from './components/IsolationModal';
+import { openModal } from './components/Modal';
 import { createPageNavigator } from './components/PageNavigator';
 import { createToolBar } from './components/ToolBar';
 import { createGuaranteesCard, createWatermarkControls } from './components/WatermarkControls';
 import { store } from './state';
 import type { PageData } from './types';
 import { createDemoPage } from './utils/demoDocument';
+import { formatBytes } from './utils/dom';
 import { icon } from './utils/icons';
-import { imageToPage, isImageFile, isPdfFile, pdfToPages } from './utils/pdfHandler';
+import {
+  imageToPage,
+  isHeicFile,
+  isImageFile,
+  isPdfFile,
+  pdfToPages,
+} from './utils/pdfHandler';
 import { toast } from './utils/toast';
+
+const WARN_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_FILE_BYTES = 200 * 1024 * 1024;
+const HEIC_MESSAGE =
+  'This browser could not decode that HEIC/HEIF photo. Export it as JPEG and try again — Safari can open HEIC directly.';
 
 export function mountApp(root: HTMLElement): void {
   root.innerHTML = '';
@@ -20,7 +33,8 @@ export function mountApp(root: HTMLElement): void {
 
   const picker = document.createElement('input');
   picker.type = 'file';
-  picker.accept = 'application/pdf,image/png,image/jpeg,image/webp,.pdf,.png,.jpg,.jpeg,.webp';
+  picker.accept =
+    'application/pdf,image/png,image/jpeg,image/webp,image/heic,image/heif,.pdf,.png,.jpg,.jpeg,.webp,.heic,.heif';
   picker.multiple = true;
   picker.hidden = true;
 
@@ -30,6 +44,7 @@ export function mountApp(root: HTMLElement): void {
     onOpen: openPicker,
     onExport: openExportDialog,
     onVerify: openIsolationDialog,
+    onClose: confirmClose,
   });
 
   const main = document.createElement('main');
@@ -168,10 +183,31 @@ export function mountApp(root: HTMLElement): void {
   /* ---------------------------------------------------------------- */
 
   async function loadFiles(files: File[]): Promise<void> {
-    const supported = files.filter((file) => isPdfFile(file) || isImageFile(file));
+    const candidates = files.filter(
+      (file) => isPdfFile(file) || isImageFile(file) || isHeicFile(file),
+    );
+    const oversized = candidates.filter((file) => file.size > MAX_FILE_BYTES);
+    if (oversized.length) {
+      toast(
+        `${oversized.map((file) => file.name).join(', ')} ${
+          oversized.length === 1 ? 'is' : 'are'
+        } over 200 MB. Split the file first — every page is rendered in memory.`,
+        'error',
+      );
+    }
+
+    const supported = candidates.filter((file) => file.size <= MAX_FILE_BYTES);
     if (supported.length === 0) {
-      toast('Unsupported file. Use PNG, JPEG, WebP or PDF.', 'error');
+      if (oversized.length === 0) {
+        toast('Unsupported file. Use PNG, JPEG, WebP or PDF.', 'error');
+      }
       return;
+    }
+
+    for (const file of supported) {
+      if (file.size > WARN_FILE_BYTES) {
+        toast(`${file.name} is ${formatBytes(file.size)} — rendering may take a while.`, 'info');
+      }
     }
 
     const pages: PageData[] = [];
@@ -185,7 +221,14 @@ export function mountApp(root: HTMLElement): void {
           pages.push(...rendered);
         } else {
           store.setBusy(`Decoding ${file.name} locally…`);
-          pages.push(await imageToPage(file));
+          try {
+            pages.push(await imageToPage(file));
+          } catch (error) {
+            // HEIC is the default iPhone camera format; Chrome and Firefox cannot
+            // decode it, so replace the opaque decoder error with a useful message.
+            if (isHeicFile(file)) throw new Error(HEIC_MESSAGE);
+            throw error;
+          }
         }
       }
 
@@ -203,6 +246,38 @@ export function mountApp(root: HTMLElement): void {
     } finally {
       store.setBusy(null);
     }
+  }
+
+  function confirmClose(): void {
+    if (store.pages.length === 0) return;
+    const annotations = store.annotationCount;
+    const pageCount = store.pages.length;
+    const pagesLabel = pageCount === 1 ? 'page' : `${pageCount} pages`;
+
+    const modal = openModal({
+      title: 'Close this document?',
+      subtitle: 'Nothing is saved anywhere — RedactZero only ever holds documents in memory.',
+      body: `
+        <p class="text-sm leading-relaxed text-slate-300">
+          ${
+            annotations > 0
+              ? `Your <strong class="text-white">${annotations} redaction${annotations === 1 ? '' : 's'}</strong> and the ${pagesLabel} will be discarded.`
+              : `The ${pagesLabel} will be removed from this tab.`
+          }
+        </p>
+      `,
+      footer: `
+        <button type="button" class="btn-ghost" data-cancel>Keep it open</button>
+        <button type="button" class="btn-danger" data-confirm>${icon('x', 'h-4 w-4')} Close document</button>
+      `,
+    });
+
+    modal.footer.querySelector('[data-cancel]')?.addEventListener('click', modal.close);
+    modal.footer.querySelector('[data-confirm]')?.addEventListener('click', () => {
+      modal.close();
+      store.removeAll();
+      toast('Document closed — nothing was saved.', 'info');
+    });
   }
 
   function loadDemo(): void {
@@ -281,6 +356,17 @@ export function mountApp(root: HTMLElement): void {
 
   store.subscribe(renderChrome);
   renderChrome();
+
+  /* ---------------------------------------------------------------- */
+  /* Unsaved-work guard                                                */
+  /* ---------------------------------------------------------------- */
+
+  window.addEventListener('beforeunload', (event) => {
+    if (store.annotationCount === 0) return;
+    event.preventDefault();
+    // Legacy browsers require returnValue to be set for the prompt to appear.
+    event.returnValue = '';
+  });
 
   /* ---------------------------------------------------------------- */
   /* Keyboard shortcuts                                                */

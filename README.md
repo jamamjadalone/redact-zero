@@ -118,8 +118,13 @@ install it as a PWA (see below) and keep using it offline.
   solid blackout on highly sensitive fields.
 - **PDFs are rasterised**, so exported PDFs are larger than the original and text is no longer
   selectable or searchable. This is intentional: it destroys hidden text layers.
-- **Memory-bound.** Very large multi-page PDFs are rendered at 2× and held in memory; on older
-  phones, prefer splitting large documents first.
+- **Memory-bound, with hard limits.** Very large multi-page PDFs are rendered at 2× and held in
+  memory. RedactZero refuses files over **200 MB** and PDFs over **100 pages**, and warns above
+  **50 MB**. Split large documents first, especially on older phones.
+- **HEIC/HEIF photos** are not decoded by Chrome or Firefox (the usual iPhone camera format).
+  RedactZero detects them and explains the fix: open it in Safari, or export the photo as JPEG.
+- **Password-protected PDFs** are rejected with a specific message — unlock them in a PDF reader
+  and save a copy first.
 - **Watermarks deter casual reuse** but do not prevent a determined attacker from cropping them.
 - **Your device is the trust boundary.** A compromised browser or malicious extension can still
   read what is on screen. RedactZero removes the server from the equation, not the endpoint.

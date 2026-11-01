@@ -1,9 +1,21 @@
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import type { PageData } from '../types';
 import { createThumbnail } from './canvasRenderer';
 import { uid } from './dom';
 
 let workerReady = false;
+
+/** Rendering every page at 2× is memory-hungry; refuse absurd documents early. */
+const MAX_PDF_PAGES = 100;
+
+function isPasswordProtected(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { name?: string }).name === 'PasswordException'
+  );
+}
 
 async function loadPdfJs() {
   const pdfjs = await import('pdfjs-dist');
@@ -21,11 +33,31 @@ export async function pdfToPages(
 ): Promise<PageData[]> {
   const pdfjs = await loadPdfJs();
   const data = new Uint8Array(await file.arrayBuffer());
-  const documentProxy = await pdfjs.getDocument({
+  const task = pdfjs.getDocument({
     data,
     isEvalSupported: false,
     useSystemFonts: true,
-  }).promise;
+  });
+
+  let documentProxy: PDFDocumentProxy;
+  try {
+    documentProxy = await task.promise;
+  } catch (error) {
+    if (isPasswordProtected(error)) {
+      throw new Error(
+        'This PDF is password-protected. Unlock it in your PDF reader, save a copy, then try again.',
+      );
+    }
+    throw error;
+  }
+
+  if (documentProxy.numPages > MAX_PDF_PAGES) {
+    const pages = documentProxy.numPages;
+    await documentProxy.destroy();
+    throw new Error(
+      `This PDF has ${pages} pages. RedactZero renders every page at 2× in memory, so split it into files of ${MAX_PDF_PAGES} pages or fewer.`,
+    );
+  }
 
   const pages: PageData[] = [];
   try {
@@ -132,5 +164,13 @@ export function isImageFile(file: File): boolean {
   return (
     /^image\/(png|jpeg|webp)$/.test(file.type) ||
     /\.(png|jpe?g|webp)$/i.test(file.name)
+  );
+}
+
+/** iPhone photos default to HEIC, which Chrome and Firefox cannot decode. */
+export function isHeicFile(file: File): boolean {
+  return (
+    /^image\/(heic|heif)$/i.test(file.type) ||
+    /\.(heic|heif)$/i.test(file.name)
   );
 }

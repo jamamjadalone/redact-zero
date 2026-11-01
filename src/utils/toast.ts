@@ -23,7 +23,17 @@ const glyphColor: Record<Variant, string> = {
   info: 'text-sky-300',
 };
 
-export function toast(message: string, variant: Variant = 'info', timeout = 4600): void {
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
+export function toast(
+  message: string,
+  variant: Variant = 'info',
+  timeout = 4600,
+  action?: ToastAction,
+): void {
   let root = document.getElementById('toasts');
   if (!root) {
     root = document.createElement('div');
@@ -39,7 +49,12 @@ export function toast(message: string, variant: Variant = 'info', timeout = 4600
   element.innerHTML = `
     <span class="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-white/[0.06] ${glyphColor[variant]}">${icon(glyphs[variant], 'h-3.5 w-3.5')}</span>
     <p class="flex-1 leading-snug">${escapeHtml(message)}</p>
-    <button type="button" class="icon-btn -mr-1 -mt-1 h-7 w-7 shrink-0" aria-label="Dismiss notification">
+    ${
+      action
+        ? `<button type="button" data-action class="btn-quiet mt-0.5 shrink-0 px-2.5 py-1 text-[11px]">${escapeHtml(action.label)}</button>`
+        : ''
+    }
+    <button type="button" data-dismiss class="icon-btn -mr-1 -mt-1 h-7 w-7 shrink-0" aria-label="Dismiss notification">
       ${icon('x', 'h-3.5 w-3.5')}
     </button>
   `;
@@ -51,7 +66,11 @@ export function toast(message: string, variant: Variant = 'info', timeout = 4600
     window.setTimeout(() => element.remove(), 200);
   };
 
-  element.querySelector('button')?.addEventListener('click', remove);
+  element.querySelector('[data-dismiss]')?.addEventListener('click', remove);
+  element.querySelector('[data-action]')?.addEventListener('click', () => {
+    remove();
+    action?.onClick();
+  });
   root.appendChild(element);
-  window.setTimeout(remove, timeout);
+  if (timeout > 0) window.setTimeout(remove, timeout);
 }

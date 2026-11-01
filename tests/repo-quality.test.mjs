@@ -281,8 +281,21 @@ test('HTML head and social metadata are complete', async () => {
   assert.match(html, /<link rel="manifest" href="manifest.json"\s*\/?>/);
   assert.match(html, /<link rel="apple-touch-icon" href="apple-touch-icon.png"\s*\/?>/);
   assert.match(html, /<meta property="og:title"/);
-  assert.match(html, /<meta property="og:image" content="icon-512.png"/);
+  assert.match(
+    html,
+    /<meta property="og:image" content="https:\/\/jamamjadalone\.is-a\.dev\/redact-zero\/icon-512\.png"/,
+  );
+  assert.match(html, /<meta property="og:image:width" content="512"/);
+  assert.match(html, /<meta property="og:image:height" content="512"/);
+  assert.match(
+    html,
+    /<meta property="og:url" content="https:\/\/jamamjadalone\.is-a\.dev\/redact-zero\/"/,
+  );
   assert.match(html, /<meta name="twitter:card"/);
+  assert.match(
+    html,
+    /<meta name="twitter:image" content="https:\/\/jamamjadalone\.is-a\.dev\/redact-zero\/icon-512\.png"/,
+  );
 
   const touch = pngSize(await readFile(path.join(ROOT, 'public/apple-touch-icon.png')));
   assert.deepEqual(touch, { width: 180, height: 180 });
@@ -442,6 +455,7 @@ test('stable UI ids used by the smoke test exist', async () => {
     'empty-demo',
     'open-btn',
     'export-btn',
+    'close-btn',
     'verify-btn',
     'isolation-pill',
     'isolation-counter',

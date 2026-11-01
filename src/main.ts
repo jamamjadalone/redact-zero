@@ -17,6 +17,14 @@ if ('serviceWorker' in navigator) {
         onOfflineReady() {
           toast('Offline cache ready — RedactZero now works without a network.', 'success');
         },
+        onNeedReload() {
+          // Supplying this callback stops the plugin from reloading under the user's
+          // feet; they choose when to pick up the new build (and we guard unsaved work).
+          toast('A new version of RedactZero is ready.', 'info', 0, {
+            label: 'Reload',
+            onClick: () => window.location.reload(),
+          });
+        },
       });
     })
     .catch(() => {

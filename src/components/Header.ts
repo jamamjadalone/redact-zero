@@ -8,6 +8,7 @@ export interface HeaderActions {
   onOpen: () => void;
   onExport: () => void;
   onVerify: () => void;
+  onClose: () => void;
 }
 
 export function createHeader(actions: HeaderActions): HTMLElement {
@@ -37,6 +38,9 @@ export function createHeader(actions: HeaderActions): HTMLElement {
           ${icon('scan', 'h-4 w-4')}
           <span class="hidden lg:inline">Verify isolation</span>
         </button>
+        <button type="button" id="close-btn" class="icon-btn hidden" title="Close document (everything is discarded)" aria-label="Close document">
+          ${icon('x', 'h-4 w-4')}
+        </button>
         <button type="button" id="open-btn" class="btn-ghost" title="Open a PDF or image (Ctrl+O)">
           ${icon('upload', 'h-4 w-4')}
           <span class="hidden sm:inline">Open</span>
@@ -56,10 +60,12 @@ export function createHeader(actions: HeaderActions): HTMLElement {
   const pill = header.querySelector<HTMLButtonElement>('#isolation-pill')!;
   const fileStrip = header.querySelector<HTMLElement>('#file-strip')!;
   const exportButton = header.querySelector<HTMLButtonElement>('#export-btn')!;
+  const closeButton = header.querySelector<HTMLButtonElement>('#close-btn')!;
 
   header.querySelector('#open-btn')?.addEventListener('click', actions.onOpen);
   header.querySelector('#export-btn')?.addEventListener('click', actions.onExport);
   header.querySelector('#verify-btn')?.addEventListener('click', actions.onVerify);
+  closeButton.addEventListener('click', actions.onClose);
   pill.addEventListener('click', actions.onVerify);
 
   const renderPill = (): void => {
@@ -122,6 +128,7 @@ export function createHeader(actions: HeaderActions): HTMLElement {
   store.subscribe(() => {
     renderFileStrip();
     exportButton.disabled = store.pages.length === 0;
+    closeButton.classList.toggle('hidden', store.pages.length === 0);
   });
   networkGuard.subscribe(renderPill);
   window.addEventListener('online', renderPill);
@@ -130,6 +137,7 @@ export function createHeader(actions: HeaderActions): HTMLElement {
   renderPill();
   renderFileStrip();
   exportButton.disabled = store.pages.length === 0;
+  closeButton.classList.toggle('hidden', store.pages.length === 0);
 
   return header;
 }
