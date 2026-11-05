@@ -112,6 +112,7 @@ test('end-to-end browser smoke test', { skip: skipReason, timeout: 300_000 }, as
       '--disable-component-update',
       '--disable-default-apps',
       '--disable-sync',
+      '--no-zygote',
       '--metrics-recording-only',
       '--mute-audio',
       '--disable-gpu',
@@ -161,13 +162,13 @@ test('end-to-end browser smoke test', { skip: skipReason, timeout: 300_000 }, as
 
     const portFile = path.join(profile, 'DevToolsActivePort');
     let devtoolsPort = 0;
-    for (let attempt = 0; attempt < 150; attempt += 1) {
+    for (let attempt = 0; attempt < 300; attempt += 1) {
       if (existsSync(portFile)) {
         try {
           const [line] = (await readFile(portFile, 'utf8')).trim().split('\n');
           devtoolsPort = Number(line);
         } catch {
-          // Windows can briefly lock the file while Chrome is writing it.
+          // Chrome can briefly lock the file while writing it.
         }
         if (devtoolsPort) break;
       }
