@@ -201,7 +201,14 @@ test('index.html enforces a strict Content-Security-Policy', async () => {
   assert.ok(imgSrc.includes('data:') && imgSrc.includes('blob:'), 'img-src must allow local blobs');
 
   assert.equal(/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), false, 'inline <script> blocks are not allowed');
-  assert.equal(/(?:src|href)="(?:https?:)?\/\//i.test(html), false, 'index.html must not load remote resources');
+  // Absolute URLs are allowed only for the canonical link and OG/Twitter images.
+  const remote = html.matchAll(/(?:src|href)="(https?:)\/\/[^"]+"/gi);
+  const allowed = new Set([
+    'https://jamamjadalone.is-a.dev/redact-zero/icon-512.png',
+    'https://jamamjadalone.is-a.dev/redact-zero/',
+  ]);
+  const disallowed = [...remote].map((m) => m[0].replace(/^(?:src|href)="/, '').replace(/"$/, '')).filter((u) => !allowed.has(u));
+  assert.deepEqual(disallowed, [], 'index.html must not load remote resources: ' + disallowed.join(', '));
   assert.match(html, /<meta name="referrer" content="no-referrer"\s*\/?>/i);
 });
 
@@ -428,11 +435,17 @@ test(
 
     const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)].map((match) => match[1]);
     for (const ref of refs) {
-      if (/^(?:https?:|data:|blob:|#|mailto:)/.test(ref)) continue;
+      if (/^(?:https?:|data:|blob:|#|mailto:)/.test(ref)) {
+        const allowed = new Set([
+          'https://jamamjadalone.is-a.dev/redact-zero/icon-512.png',
+          'https://jamamjadalone.is-a.dev/redact-zero/',
+        ]);
+        assert.ok(allowed.has(ref), `dist/index.html should not reference external URL: ${ref}`);
+        continue;
+      }
       const clean = ref.replace(/^\.\//, '').replace(/^\/redact-zero\//, '');
       assert.ok(exists(`dist/${clean}`), `dist/index.html references a missing asset: ${ref}`);
     }
-    assert.equal(/(?:src|href)="(?:https?:)?\/\//i.test(html), false);
 
     const files = await walk('dist');
     assert.equal(files.some((file) => file.endsWith('.map')), false, 'source maps must not ship');

@@ -35,8 +35,8 @@
     "preview": "vite preview",
     "icons": "node scripts/generate-icons.mjs",
     "pretest": "npm run build",
-    "test": "node --test --test-concurrency=1 tests/repo-quality.test.mjs tests/smoke.test.mjs",
-    "test:repo": "node --test tests/repo-quality.test.mjs",
+    "test": "node --test --test-concurrency=1 tests/repo-quality.test.mjs tests/security-audit.test.mjs tests/seo-audit.test.mjs tests/smoke.test.mjs",
+    "test:repo": "node --test tests/repo-quality.test.mjs tests/security-audit.test.mjs tests/seo-audit.test.mjs",
     "test:smoke": "node --test tests/smoke.test.mjs"
   },
   "dependencies": {
