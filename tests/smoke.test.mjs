@@ -114,6 +114,7 @@ test('end-to-end browser smoke test', { skip: skipReason, timeout: 300_000 }, as
       '--disable-sync',
       '--metrics-recording-only',
       '--mute-audio',
+      '--disable-gpu',
       '--force-device-scale-factor=1',
       '--window-size=1440,1000',
       '--hide-scrollbars',
