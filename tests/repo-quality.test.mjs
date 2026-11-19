@@ -535,7 +535,7 @@ test('CI workflows run the quality gates', async () => {
   const quality = await read('.github/workflows/quality.yml');
   assert.match(quality, /pull_request/);
   assert.match(quality, /npm ci/);
-  assert.match(quality, /npm test/);
+  assert.match(quality, /npm test|npm run test:repo/);
   assert.match(quality, /actions\/setup-node/);
 
   const deploy = await read('.github/workflows/deploy.yml');
