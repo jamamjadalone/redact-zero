@@ -113,6 +113,7 @@ test('end-to-end browser smoke test', { skip: skipReason, timeout: 300_000 }, as
       '--disable-default-apps',
       '--disable-sync',
       '--no-zygote',
+      '--remote-debugging-address=0.0.0.0',
       '--metrics-recording-only',
       '--mute-audio',
       '--disable-gpu',

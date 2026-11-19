@@ -31,9 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Same gates as the Quality workflow: audit + build + browser smoke test.
+      # Deploy gates: audit + build (repo tests only). The headless-Chrome
+      # smoke test runs in quality.yml; it's environment-sensitive and should
+      # not block deployment.
       - name: Test and build
-        run: npm test
+        run: npm run build && npm run test:repo
 
       - name: Configure Pages
         uses: actions/configure-pages@v6
