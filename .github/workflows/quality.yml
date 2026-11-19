@@ -31,6 +31,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Build first so repo audit can check dist/ (service worker, assets, etc.)
+      - name: Build
+        run: npm run build
+
       # `npm run test:repo` runs the repository audit (build, security, SEO,
       # structure, package hygiene). The headless-Chrome smoke test runs below
       # as a separate, non-blocking step because it's environment-sensitive.
