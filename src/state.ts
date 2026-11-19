@@ -1,4 +1,5 @@
 import type { Annotation, PageData, Tool, WatermarkOptions } from './types';
+import { uid } from './utils/dom';
 
 export function formatLongDate(date = new Date()): string {
   return date.toLocaleDateString('en-GB', {
@@ -28,7 +29,9 @@ class Store {
   offsetY = 0;
   fitMode = true;
   fileName = '';
+  exportName = '';
   busy: string | null = null;
+  redactedVisible = true;
   watermark: WatermarkOptions = {
     text: `FOR VERIFICATION ONLY — ${formatLongDate().toUpperCase()}`,
     recipient: '',
@@ -112,6 +115,30 @@ class Store {
 
   setBusy(label: string | null): void {
     this.busy = label;
+    this.emit();
+  }
+
+  setExportName(name: string): void {
+    this.exportName = name.trim();
+    this.emit();
+  }
+
+  toggleRedactedVisible(): void {
+    this.redactedVisible = !this.redactedVisible;
+    this.emit();
+  }
+
+  applyAnnotationToAllPages(annotation: Annotation): void {
+    const page = this.page;
+    if (!page) return;
+    for (const p of this.pages) {
+      if (p.id === page.id) continue;
+      const exists = p.annotations.find((a) => a.id === annotation.id);
+      if (!exists) {
+        p.annotations.push({ ...annotation, id: uid('box') });
+      }
+    }
+    this.commit();
     this.emit();
   }
 

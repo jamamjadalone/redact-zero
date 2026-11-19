@@ -9,6 +9,7 @@ export interface HeaderActions {
   onExport: () => void;
   onVerify: () => void;
   onClose: () => void;
+  onShortcuts: () => void;
 }
 
 export function createHeader(actions: HeaderActions): HTMLElement {
@@ -38,6 +39,10 @@ export function createHeader(actions: HeaderActions): HTMLElement {
           ${icon('scan', 'h-4 w-4')}
           <span class="hidden lg:inline">Verify isolation</span>
         </button>
+        <button type="button" id="shortcuts-btn" class="btn-ghost hidden md:inline-flex" title="Keyboard shortcuts (Ctrl+/)">
+          ${icon('keyboard', 'h-4 w-4')}
+          <span class="hidden lg:inline">Shortcuts</span>
+        </button>
         <button type="button" id="close-btn" class="icon-btn hidden" title="Close document (everything is discarded)" aria-label="Close document">
           ${icon('x', 'h-4 w-4')}
         </button>
@@ -65,6 +70,7 @@ export function createHeader(actions: HeaderActions): HTMLElement {
   header.querySelector('#open-btn')?.addEventListener('click', actions.onOpen);
   header.querySelector('#export-btn')?.addEventListener('click', actions.onExport);
   header.querySelector('#verify-btn')?.addEventListener('click', actions.onVerify);
+  header.querySelector('#shortcuts-btn')?.addEventListener('click', actions.onShortcuts);
   closeButton.addEventListener('click', actions.onClose);
   pill.addEventListener('click', actions.onVerify);
 

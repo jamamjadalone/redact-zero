@@ -45,6 +45,7 @@ export function mountApp(root: HTMLElement): void {
     onExport: openExportDialog,
     onVerify: openIsolationDialog,
     onClose: confirmClose,
+    onShortcuts: openShortcutsDialog,
   });
 
   const main = document.createElement('main');
@@ -132,6 +133,27 @@ export function mountApp(root: HTMLElement): void {
     'pointer-events-none absolute bottom-3 left-3 hidden rounded-full border border-white/[0.07] bg-[#05080f]/70 px-3 py-1.5 font-mono text-[10px] text-slate-500 backdrop-blur-md md:block';
   hint.textContent = 'wheel = zoom · space = pan · esc = select';
   canvasWrap.appendChild(hint);
+
+  /* ---------------------------------------------------------------- */
+  /* Show original toggle + apply-to-all-pages                        */
+  /* ---------------------------------------------------------------- */
+
+  const originalToggle = document.createElement('button');
+  originalToggle.id = 'toggle-original';
+  originalToggle.className =
+    'absolute bottom-3 right-3 z-30 h-9 w-9 shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.06] text-slate-300 transition hover:bg-white/[0.12] hover:text-white';
+  originalToggle.title = 'Show original (temporarily hide redactions)';
+  originalToggle.innerHTML = `${icon('eyeOff', 'h-4 w-4')}`;
+  originalToggle.setAttribute('aria-pressed', 'false');
+  canvasWrap.appendChild(originalToggle);
+
+  const applyAllBtn = document.createElement('button');
+  applyAllBtn.id = 'apply-all-pages';
+  applyAllBtn.className =
+    'absolute bottom-3 right-12 z-30 hidden h-9 w-9 shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.06] text-slate-300 transition hover:bg-white/[0.12] hover:text-white';
+  applyAllBtn.title = 'Apply selected redaction to all pages';
+  applyAllBtn.innerHTML = `${icon('layers', 'h-4 w-4')}`;
+  canvasWrap.appendChild(applyAllBtn);
 
   const busyOverlay = document.createElement('div');
   busyOverlay.className =
@@ -291,6 +313,106 @@ export function mountApp(root: HTMLElement): void {
     }
   }
 
+  function openShortcutsDialog(): void {
+    const modal = openModal({
+      title: 'Keyboard shortcuts',
+      subtitle: 'Work faster with the keyboard — everything stays local.',
+      width: 'max-w-lg',
+      body: `
+        <div class="space-y-5">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 mb-3">File</p>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Open document</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">Ctrl + O</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Export document</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">Ctrl + E</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Close document</span>
+                  <span class="font-mono text-xs text-slate-400">Header × button</span>
+                </div>
+              </div>
+            </div>
+            <div class="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 mb-3">Canvas</p>
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Select tool</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">V</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Blackout tool</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">B</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Pixelate tool</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">P</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Whiteout tool</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">W</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Hand / pan tool</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">H</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Fit to window</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">0</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Zoom in / out</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">+ / -</span>
+                </div>
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-slate-300">Pan (hold)</span>
+                  <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">Space</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400 mb-3">Editing</p>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-300">Undo</span>
+                <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">Ctrl + Z</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-300">Redo</span>
+                <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">Ctrl + Y</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-300">Delete selected</span>
+                <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">Delete</span>
+              </div>
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-slate-300">Clear selection</span>
+                <span class="font-mono text-xs text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded">Esc</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2 text-[11px] text-slate-500">
+            <p>All shortcuts work only when you’re not typing in a text field. The canvas redaction boxes
+            are vectors until you export — move, resize or delete them at any time.</p>
+          </div>
+        </div>
+      `,
+      footer: `
+        <button type="button" class="btn-primary" data-done>${icon('check', 'h-4 w-4')} Got it</button>
+      `,
+    });
+
+    modal.footer.querySelector('[data-done]')?.addEventListener('click', modal.close);
+  }
+
   picker.addEventListener('change', () => {
     const files = Array.from(picker.files ?? []);
     picker.value = '';
@@ -352,10 +474,31 @@ export function mountApp(root: HTMLElement): void {
     busyOverlay.classList.toggle('grid', Boolean(store.busy));
     const busyText = busyOverlay.querySelector<HTMLElement>('#busy-text');
     if (busyText && store.busy) busyText.textContent = store.busy;
+
+    originalToggle.setAttribute('aria-pressed', String(store.redactedVisible));
+    originalToggle.title = store.redactedVisible
+      ? 'Show original (hide redactions)'
+      : 'Show redacted (reveal redactions)';
+
+    const hasSelection = store.page && editor.getSelectedAnnotation() !== null;
+    const multiPage = store.pages.length > 1;
+    applyAllBtn.classList.toggle('hidden', !(hasSelection && multiPage));
   };
 
   store.subscribe(renderChrome);
   renderChrome();
+
+  originalToggle.addEventListener('click', () => {
+    store.toggleRedactedVisible();
+  });
+
+  applyAllBtn.addEventListener('click', () => {
+    const annotation = editor.getSelectedAnnotation();
+    if (annotation) {
+      store.applyAnnotationToAllPages(annotation);
+      toast('Applied to all pages', 'success');
+    }
+  });
 
   /* ---------------------------------------------------------------- */
   /* Unsaved-work guard                                                */
@@ -377,6 +520,11 @@ export function mountApp(root: HTMLElement): void {
     const mod = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
 
+    if (mod && key === '/') {
+      event.preventDefault();
+      openShortcutsDialog();
+      return;
+    }
     if (mod && key === 'z') {
       event.preventDefault();
       if (event.shiftKey) store.redo();

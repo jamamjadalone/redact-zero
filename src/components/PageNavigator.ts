@@ -41,6 +41,9 @@ export function createPageNavigator(): HTMLElement {
           }" data-page="${index}" title="${escapeHtml(page.label)}" aria-label="Go to page ${index + 1}">
             <img src="${page.thumbnail}" alt="" class="h-10 w-auto max-w-[76px] object-cover sm:h-12 sm:max-w-[84px]" />
             <span class="absolute bottom-0 right-0 rounded-tl-md bg-[#04060b]/85 px-1 py-px font-mono text-[9px] text-slate-300 backdrop-blur">${index + 1}</span>
+            ${page.annotations.length > 0 ? `
+            <span class="absolute top-0 right-0 rounded-bl-md bg-emerald-400/90 px-1 py-px font-mono text-[9px] text-emerald-950 backdrop-blur">${page.annotations.length}</span>
+            ` : ''}
           </button>`,
         )
         .join('');

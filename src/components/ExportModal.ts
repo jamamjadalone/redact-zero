@@ -15,8 +15,8 @@ interface FormatSpec {
 
 const FORMATS: FormatSpec[] = [
   { format: 'pdf', title: 'PDF', detail: 'All pages · flattened', glyph: 'file' },
-  { format: 'png', title: 'PNG', detail: 'Lossless · current page', glyph: 'image' },
-  { format: 'jpeg', title: 'JPEG', detail: 'Smaller · current page', glyph: 'image' },
+  { format: 'png', title: 'PNG', detail: 'Lossless · all pages', glyph: 'image' },
+  { format: 'jpeg', title: 'JPEG', detail: 'Smaller · all pages', glyph: 'image' },
 ];
 
 export function openExportDialog(): void {
@@ -30,7 +30,10 @@ export function openExportDialog(): void {
   let format: ExportFormat = defaultFormat;
   let quality = 92;
   let busy = false;
+  let aborted = false;
   let result: ExportResult | null = null;
+
+  const defaultName = (store.exportName || store.fileName || 'document').replace(/\.[^/.]+$/, '');
 
   const modal = openModal({
     title: 'Export a flattened document',
@@ -38,6 +41,12 @@ export function openExportDialog(): void {
     width: 'max-w-xl',
     body: `
       <div class="space-y-5">
+        <div>
+          <div class="field-label mb-2"><span>Output name</span><span id="scope-note" class="field-value"></span></div>
+          <input id="export-name" type="text" value="${escapeHtml(defaultName)}" class="input mt-2 w-full" placeholder="document" />
+          <p class="mt-1 text-[10px] text-slate-500">Extension is added automatically.</p>
+        </div>
+
         <div>
           <div class="field-label mb-2"><span>Format</span><span id="scope-note" class="field-value"></span></div>
           <div class="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Export format">
@@ -78,7 +87,7 @@ export function openExportDialog(): void {
         <div id="progress" class="hidden">
           <div class="flex items-center justify-between text-[11px] text-slate-400">
             <span id="progress-label">Preparing…</span>
-            <span id="progress-pct" class="font-mono">0%</span>
+            <button type="button" id="progress-cancel" class="h-7 w-7 shrink-0 rounded-xl border border-white/[0.08] bg-white/[0.04] text-slate-400 hover:text-rose-300 hover:bg-rose-500/10">${icon('x', 'h-3.5 w-3.5')}</button>
           </div>
           <div class="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.08] ring-1 ring-white/[0.04]">
             <div id="progress-bar" class="h-full w-0 rounded-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 shadow-[0_0_14px_rgba(52,211,153,0.7)] transition-[width] duration-200"></div>
@@ -95,6 +104,7 @@ export function openExportDialog(): void {
   });
 
   const formatButtons = Array.from(modal.body.querySelectorAll<HTMLButtonElement>('[data-format]'));
+  const nameInput = modal.body.querySelector<HTMLInputElement>('#export-name')!;
   const qualityWrap = modal.body.querySelector<HTMLElement>('#quality-wrap')!;
   const qualityInput = modal.body.querySelector<HTMLInputElement>('#export-quality')!;
   const qualityValue = modal.body.querySelector<HTMLElement>('#quality-value')!;
@@ -107,6 +117,7 @@ export function openExportDialog(): void {
   const progressLabel = modal.body.querySelector<HTMLElement>('#progress-label')!;
   const progressPct = modal.body.querySelector<HTMLElement>('#progress-pct')!;
   const progressBar = modal.body.querySelector<HTMLElement>('#progress-bar')!;
+  const progressCancel = modal.body.querySelector<HTMLButtonElement>('#progress-cancel')!;
   const resultPanel = modal.body.querySelector<HTMLElement>('#result')!;
   const exportButton = modal.footer.querySelector<HTMLButtonElement>('[data-export]')!;
   const cancelButton = modal.footer.querySelector<HTMLButtonElement>('[data-cancel]')!;
@@ -119,9 +130,9 @@ export function openExportDialog(): void {
     }
 
     qualityWrap.classList.toggle('hidden', format !== 'jpeg');
-    scopeNote.textContent = format === 'pdf' ? 'Every page' : 'Current page';
-    sumPages.textContent =
-      format === 'pdf' ? String(store.pages.length) : '1';
+    const isMulti = format !== 'pdf' && store.pages.length > 1;
+    scopeNote.textContent = format === 'pdf' ? 'Every page' : isMulti ? 'All pages (separate files)' : 'Current page';
+    sumPages.textContent = String(store.pages.length);
     sumRes.textContent = `${page.width}×${page.height}`;
     sumRedactions.textContent = String(
       format === 'pdf' ? store.annotationCount : page.annotations.length,
@@ -136,12 +147,31 @@ export function openExportDialog(): void {
     });
   }
 
+  nameInput.addEventListener('input', () => {
+    store.setExportName(nameInput.value);
+    refresh();
+  });
+
   qualityInput.addEventListener('input', () => {
     quality = Number(qualityInput.value);
     qualityValue.textContent = `${quality}%`;
   });
 
-  cancelButton.addEventListener('click', () => modal.close());
+  cancelButton.addEventListener('click', () => {
+    aborted = true;
+    modal.close();
+  });
+
+  progressCancel.addEventListener('click', () => {
+    aborted = true;
+    progressLabel.textContent = 'Cancelling…';
+    progressCancel.disabled = true;
+  });
+
+  const baseName = (): string => {
+    const raw = nameInput.value.trim() || store.fileName || 'document';
+    return raw.replace(/\.[^/.]+$/, '');
+  };
 
   const renderResult = (output: ExportResult): void => {
     resultPanel.classList.remove('hidden');
@@ -186,44 +216,87 @@ export function openExportDialog(): void {
   exportButton.addEventListener('click', async () => {
     if (busy) return;
     busy = true;
+    aborted = false;
     exportButton.disabled = true;
     cancelButton.disabled = true;
     resultPanel.classList.add('hidden');
     progress.classList.remove('hidden');
+    progressCancel.disabled = false;
     progressLabel.textContent = 'Preparing…';
     progressPct.textContent = '0%';
     progressBar.style.width = '0%';
 
-    const pages = format === 'pdf' ? store.pages : [page];
+    const isMultiImage = format !== 'pdf' && store.pages.length > 1;
+    const pageList = isMultiImage ? store.pages : [page];
 
     try {
-      const output = await exportDocument(
-        {
-          pages,
-          format,
-          quality: format === 'jpeg' ? quality / 100 : 0.92,
-          watermark: store.watermark,
-          baseName: store.fileName,
-        },
-        (label, fraction) => {
-          progressLabel.textContent = label;
-          const percent = Math.round(fraction * 100);
-          progressPct.textContent = `${percent}%`;
-          progressBar.style.width = `${percent}%`;
-        },
-      );
+      for (let i = 0; i < pageList.length; i += 1) {
+        if (aborted) {
+          progressLabel.textContent = 'Cancelled.';
+          toast('Export cancelled.', 'info');
+          return;
+        }
 
-      result = output;
-      downloadBlob(output.blob, output.filename);
-      renderResult(output);
-      toast('Export complete — the file never left your device.', 'success');
+        const singlePage = pageList[i];
+        const pageNum = i + 1;
+        const pageLabel = store.pages.length > 1 ? ` — page ${pageNum}` : '';
+        const fileBase = `${baseName()}${pageLabel}`;
+
+        const output = await exportDocument(
+          {
+            pages: [singlePage],
+            format,
+            quality: format === 'jpeg' ? quality / 100 : 0.92,
+            watermark: store.watermark,
+            baseName: fileBase,
+          },
+          (_label, fraction) => {
+            const overall = Math.round(((i + fraction) / pageList.length) * 100);
+            progressPct.textContent = `${overall}%`;
+            progressBar.style.width = `${overall}%`;
+          },
+        );
+
+        if (aborted) {
+          progressLabel.textContent = 'Cancelled.';
+          toast('Export cancelled.', 'info');
+          return;
+        }
+
+        downloadBlob(output.blob, output.filename);
+        result = output;
+        progressLabel.textContent = `Page ${pageNum} of ${pageList.length} done`;
+        progressPct.textContent = `${Math.round(((i + 1) / pageList.length) * 100)}%`;
+        progressBar.style.width = `${Math.round(((i + 1) / pageList.length) * 100)}%`;
+      }
+
+      if (aborted) {
+        progressLabel.textContent = 'Cancelled.';
+        toast('Export cancelled.', 'info');
+        return;
+      }
+
+      toast(
+        `Exported ${pageList.length} file${pageList.length === 1 ? '' : 's'} — 0 bytes uploaded.`,
+        'success',
+      );
       progressLabel.textContent = 'Complete';
+      progressPct.textContent = '100%';
+      progressBar.style.width = '100%';
+
+      if (result) renderResult(result);
     } catch (error) {
+      if (aborted) {
+        progressLabel.textContent = 'Cancelled.';
+        toast('Export cancelled.', 'info');
+        return;
+      }
       const message = error instanceof Error ? error.message : 'Export failed.';
       progressLabel.textContent = message;
       toast(message, 'error');
     } finally {
       busy = false;
+      aborted = false;
       exportButton.disabled = false;
       cancelButton.disabled = false;
     }

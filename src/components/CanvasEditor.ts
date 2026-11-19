@@ -224,9 +224,9 @@ export class CanvasEditor {
     ctx.drawImage(page.source, 0, 0);
 
     for (const annotation of page.annotations) {
-      drawAnnotation(ctx, page, annotation);
+      if (store.redactedVisible) drawAnnotation(ctx, page, annotation);
     }
-    if (this.draft) drawAnnotation(ctx, page, this.draft);
+    if (this.draft && store.redactedVisible) drawAnnotation(ctx, page, this.draft);
     if (store.watermark.enabled) {
       drawWatermark(ctx, page.width, page.height, store.watermark);
     }
@@ -582,6 +582,12 @@ export class CanvasEditor {
     this.selectedId = null;
     store.commit();
     return true;
+  }
+
+  getSelectedAnnotation(): Annotation | null {
+    const page = this.page;
+    if (!page || !this.selectedId) return null;
+    return page.annotations.find((a) => a.id === this.selectedId) ?? null;
   }
 
   clearSelection(): void {
